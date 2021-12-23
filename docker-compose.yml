@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+    dev:
+        container_name: nest_develop
+        image: nest-develop:0.0.1
+        build:
+            context: .
+            target: development
+            dockerfile: ./Dockerfile
+        command: npm run start:dev
+        ports:
+            - 3000:3000
+        depends_on:
+            - memcached
+            - db
+        links:
+            - memcached
+            - db
+        env_file:
+          - ./src/.env.develop   
+        volumes:
+            - ./src:/usr/src/app
+            - /usr/src/app/node_modules
+        logging:
+            driver: json-file
+            options:
+                max-file: '1'
+                max-size: 3m
+    memcached:
+        container_name: local-memcached
+        image: memcached:latest
+        ports:
+            - "11211:11211"
+    db:
+        container_name: local-db
+        image: mysql:8.0
+        volumes:
+            - db-store:/var/lib/mysql
+            - ./mysql/initdb.d:/docker-entrypoint-initdb.d
+            - ./mysql/logs:/var/log/mysql
+            - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+        environment:
+            - MYSQL_DATABASE=sample_db
+            - MYSQL_USER=sample
+            - MYSQL_PASSWORD=sample
+            - MYSQL_ROOT_PASSWORD=sample
+            - TZ=Asia/Tokyo
+        ports:
+            - "3306:3306"
+volumes:
+    db-store:
